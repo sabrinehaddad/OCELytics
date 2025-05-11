@@ -1,0 +1,8 @@
+Metadata-Version: 2.1
+Name: ocelytics
+Version: 0.1
+Summary: Object-centric event log feature extractor
+Author: Sabrine
+Requires-Dist: numpy
+Requires-Dist: pandas
+Requires-Dist: scipy
