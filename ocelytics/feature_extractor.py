@@ -20,8 +20,8 @@ def extract_features(input_path, output_path=None, feature_types=["all"]):
 
     if "activity_level" in feature_types:
         try:
-            from . import activity_level
-            features.update(activity_level.extract(log))
+            from . import activities
+            features.update(activities.extract(log))
         except Exception as e:
             print("❌ Failed to extract activity_level features:", e)
 
