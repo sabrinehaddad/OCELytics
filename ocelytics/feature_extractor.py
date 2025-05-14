@@ -1,55 +1,60 @@
 import json
 import pandas as pd
+import subprocess
+from .activities import Activities as activities
+from .simple_stats import SimpleStats as simple_stats
+from .path_variant import PathVariant as path_variant
+from .path_length import PathLength as path_length
+from .objects import Objects as objects
+from datetime import datetime as dt
 
-def extract_features(input_path, output_path=None, feature_types=["all"]):
-    """
-    Extract features from an OCEL log and return them as a dictionary.
-    Optionally saves the result to a CSV file if output_path is provided.
-    """
-    with open(input_path, 'r') as f:
-        log = json.load(f)
+import pm4py
 
-    features = {}
+FEATURE_TYPES = [
+    "activities",
+    "simple_stats",
+    "objects",
+    "path_variant",
+    "path_length"
+    ]
 
-    if "all" in feature_types or "log_level" in feature_types:
-        try:
-            from . import simple_stats
-            features.update(simple_stats.extract(log))
-        except Exception as e:
-            print("❌ Failed to extract log_level features:", e)
+def feature_type(feature_name):
+    available_features = []
+    for feature_type in FEATURE_TYPES:
+        available_features.extend([*eval(feature_type)().available_class_methods])
+        available_features.append(str(feature_type))
+        if feature_name in available_features:
+            return feature_type
+    raise ValueError(f"ERROR: Invalid value for feature_key argument: {feature_name}. See README.md for " +
+                     f"supported feature_names or use a sublist of the following: {FEATURE_TYPES} or None")
 
-    if "activity_level" in feature_types:
-        try:
-            from . import activities
-            features.update(activities.extract(log))
-        except Exception as e:
-            print("❌ Failed to extract activity_level features:", e)
 
-    if "object_level" in feature_types:
-        try:
-            from . import object_level
-            features.update(object_level.extract(log))
-        except Exception as e:
-            print("❌ Failed to extract object_level features:", e)
+def extract_features(event_logs_path, feature_types=None):
+    log_name = event_logs_path.rsplit("/", 1)[-1]
+    with open(event_logs_path, "r") as f:
+      log = json.load(f)
 
-    if "path_length" in feature_types:
-        try:
-            from . import path_length
-            features.update(path_length.extract(log))
-        except Exception as e:
-            print("❌ Failed to extract path_length features:", e)
+    if feature_types is None:
+        feature_types = FEATURE_TYPES
+    
+    features = {"log": log_name.split(".jsonocel")[0]}
+    start_log = dt.now()
+    
+    for i, ft_name in enumerate(feature_types):
+        start_feat = dt.now()
+        
+        ft_type = feature_type(ft_name)
+    
+        feature_values = eval(f"{ft_type}(feature_names=['{ft_name}']).extract(log)")
+        features = {**features, **feature_values}
 
-    if "path_variant" in feature_types:
-        try:
-            from . import path_variant
-            features.update(path_variant.extract(log))
-        except Exception as e:
-            print("❌ Failed to extract path_variant features:", e)
-
-    if output_path:
-        df = pd.DataFrame([features])
-        df.to_csv(output_path, index=False)
-        print(f"\n📁 Features saved to: {output_path}")
+        log_info =  f"     INFO: {log_name} starting at {len(features)}, {ft_name} from {ft_type} took {dt.now()-start_feat} sec, "
+        if i == len(feature_types) - 1:
+            print(log_info + "last feature.")
+        else:
+            print(log_info + f"next {feature_types[(i+1)%len(feature_types)]}...")
+    print(
+        f"SUCCESSFULLY: {len(features)-1} features for {log_name} took {dt.now() - start_log} sec."
+    )
 
     return features
-

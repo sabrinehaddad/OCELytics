@@ -1,10 +1,12 @@
 import inspect
+import numpy as np
+from collections import Counter
 from .feature import Feature
 
 
-class SimpleStats(Feature):
+class Objects(Feature):
     def __init__(self, feature_names=None):
-        self.feature_type = "simple_stats"
+        self.feature_type = "objects"
         self.available_class_methods = dict(inspect.getmembers(self.__class__, predicate=inspect.ismethod))
 
         if feature_names is None or self.feature_type in feature_names:
@@ -13,28 +15,22 @@ class SimpleStats(Feature):
             self.feature_names = feature_names
 
     @staticmethod
-    def events(ocel):
-        return ocel.events  
-
-    @staticmethod
     def objects(ocel):
         return ocel.objects
 
-    @classmethod
-    def n_events(cls, ocel):
-        return len(cls.events(ocel))
+    @staticmethod
+    def events(ocel):
+        return ocel.events
 
     @classmethod
     def n_objects(cls, ocel):
         return len(cls.objects(ocel))
 
     @classmethod
-    def n_object_types(cls, ocel):
+    def n_unique_object_types(cls, ocel):
         return cls.objects(ocel)["ocel:type"].nunique()
 
-    @classmethod
-    def n_activities(cls, ocel):
-        return cls.events(ocel)["ocel:activity"].nunique()
+
 
     def extract(self, ocel):
         return {
@@ -42,5 +38,4 @@ class SimpleStats(Feature):
             for name, method in inspect.getmembers(self.__class__, predicate=inspect.ismethod)
             if name in self.feature_names
         }
-
 

@@ -4,27 +4,19 @@ from collections import Counter
 from scipy import stats
 from .feature import Feature
 
-class ActivitiesOCEL(Feature):
-    def __init__(self):
-        super().__init__()
-        self.feature_names = [
-            "n_unique_activities",
-            "activities_min",
-            "activities_max",
-            "activities_mean",
-            "activities_median",
-            "activities_std",
-            "activities_variance",
-            "activities_q1",
-            "activities_q3",
-            "activities_iqr",
-            "activities_skewness",
-            "activities_kurtosis"
-        ]
+class Activities(Feature):
+    def __init__(self, feature_names=None):
+        self.feature_type = "activities"
+        self.available_class_methods = dict(inspect.getmembers(self.__class__, predicate=inspect.ismethod))
+
+        if feature_names is None or self.feature_type in feature_names:
+            self.feature_names = list(self.available_class_methods.keys())
+        else:
+            self.feature_names = feature_names
 
     @staticmethod
     def activities(ocel):
-        return Counter(event["ocel:activity"] for event in ocel["ocel:events"].values())
+      return Counter(event["ocel:activity"] for _, event in ocel.events.iterrows())
 
     @classmethod
     def n_unique_activities(cls, ocel):
@@ -73,14 +65,3 @@ class ActivitiesOCEL(Feature):
     @classmethod
     def activities_kurtosis(cls, ocel):
         return stats.kurtosis(list(cls.activities(ocel).values()))
-
-    def extract(self, ocel):
-        return {
-            name: method(ocel)
-            for name, method in inspect.getmembers(self.__class__, predicate=inspect.ismethod)
-            if name in self.feature_names
-        }
-
-
-def extract(log):
-    return ActivitiesOCEL().extract(log)
