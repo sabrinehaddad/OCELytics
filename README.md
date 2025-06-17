@@ -106,7 +106,7 @@ http://localhost:8501
 - 📊 View results in a scrollable, filterable table
 - 📥 Download results as a CSV file
 
-!(WebApp.png)
+![Webapp](WebApp.png)
 ---
 
 ## Feature System Design
